@@ -1,0 +1,10 @@
+node_modules
+
+#Hardhat files
+cache
+artifacts
+
+#TypeChain
+typechain
+
+.DS_Store
