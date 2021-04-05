@@ -6,7 +6,7 @@ contract ServiceDao {
 
     address[] public teammates;
 
-    address public immutable goldenShare; // TODO Vlad Address
+    address public immutable goldenShare;
 
     uint256 public constant votingDuration = 72 hours;
 
