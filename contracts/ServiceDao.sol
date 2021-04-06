@@ -164,24 +164,29 @@ contract ServiceDao {
 
         require(_found);
 
-        address[] memory newTeammates = new address[](teammates.length - 1);
+        teammates[_index] = teammates[teammates.length - 1];
 
-        for (uint256 i = 0; i < teammates.length - 1; i++) {
-            if (i != _index && i < _index) {
-                newTeammates[i] = teammates[i];
-            } else {
-                newTeammates[i] = teammates[i + 1];
-            }
-        }
-
-        teammates = newTeammates;
+        teammates.pop();
 
         return true;
     }
 
     function transferOfRights(address _oldTeammate, address _newTeammate) public contractOnly returns (bool success) {
-        removeTeammate(_oldTeammate);
-        addTeammate(_newTeammate);
+        bool _found;
+        uint256 _index;
+
+        for (uint256 i = 0; i < teammates.length; i++) {
+            if (_oldTeammate == teammates[i]) {
+                _found = true;
+                _index = i;
+                break;
+            }
+        }
+
+        require(_found);
+
+        teammates[_index] = _newTeammate;
+
         return true;
     }
 

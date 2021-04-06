@@ -116,7 +116,7 @@ describe("Service DAO", () => {
     await dac.activateVoting(1);
 
     expect((await dac.getAllTeammates()).length).to.equal(2);
-    expect(await dac.teammates(0)).to.equal(goldenShare);
-    expect(await dac.teammates(1)).to.equal(friend);
+    expect(await dac.teammates(0)).to.equal(friend);
+    expect(await dac.teammates(1)).to.equal(goldenShare);
   });
 });
