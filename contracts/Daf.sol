@@ -94,6 +94,12 @@ contract Daf {
 
     event VotingAddToWhitelistActivated(uint256 index, uint256 timestamp);
 
+    event Received(address, uint256);
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
+
     modifier holdersOnly {
         require(balanceOf[msg.sender] > 0);
         _;
@@ -449,9 +455,11 @@ contract Daf {
         payable(msg.sender).transfer(address(this).balance / share);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
-            IERC20 _tokenToSend = IERC20(_tokens[i]);
+            if (_tokens[i] != address(this)) {
+                IERC20 _tokenToSend = IERC20(_tokens[i]);
 
-            _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+                _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+            }
         }
 
         totalSupply -= balanceOf[msg.sender];

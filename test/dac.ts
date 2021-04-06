@@ -274,6 +274,33 @@ describe("Dac", () => {
     expect(await dac.teammates(0)).to.equal(friend);
   });
 
+  it("Transfer of Rights", async () => {
+    const signers = await ethers.getSigners();
+
+    const myAddress = await signers[0].getAddress();
+
+    const friend = await signers[1].getAddress();
+
+    expect((await dac.getAllTeammates()).length).to.equal(1);
+    expect(await dac.teammates(0)).to.equal(myAddress);
+
+    await dac.createVoting(
+      dac.address,
+      ethers.utils.id("transferOfRights(address,address)").slice(0, 10) +
+        abiCoder.encode(["address", "address"], [myAddress, friend]).slice(2),
+      0,
+      `Transfer to ${friend}`
+    );
+
+    await dac.signVoting(0);
+
+    await dac.activateVoting(0);
+
+    expect((await dac.getAllTeammates()).length).to.equal(1);
+    // expect(await dac.teammates(0)).to.equal(myAddress);
+    expect(await dac.teammates(0)).to.equal(friend);
+  });
+
   it("Buy Governance Tokens for Coins", async () => {
     const signers = await ethers.getSigners();
 
@@ -296,5 +323,148 @@ describe("Dac", () => {
     expect(await dac.balanceOf(myAddress)).to.equal(10);
 
     expect(await dac.totalSupply()).to.equal(100e3);
+  });
+
+  it("Burn Governance Tokens", async () => {
+    const signers = await ethers.getSigners();
+
+    const myAddress = await signers[0].getAddress();
+
+    expect(await dac.balanceOf(dac.address))
+      .to.equal(await dac.totalSupply())
+      .to.equal(100e3);
+
+    expect(await dac.balanceOf(myAddress)).to.equal(0);
+
+    // It doesn't matter how many tokens you enter as an argument, as long as you buy them with coins.
+    // You will receive the maximum possible number of tokens based on your msg.value
+    await dac.buyGovernanceTokens(10, {
+      value: BigNumber.from(+"1e17" + ""),
+    });
+
+    expect(await dac.balanceOf(dac.address)).to.equal(100e3 - 10);
+
+    expect(await dac.balanceOf(myAddress)).to.equal(10);
+
+    expect(await dac.totalSupply()).to.equal(100e3);
+
+    expect(await dac.burnable()).to.equal(false);
+
+    await dac.createVoting(
+      dac.address,
+      ethers.utils.id("changeBurnable(bool)").slice(0, 10) +
+        abiCoder.encode(["bool"], [true]).slice(2),
+      0,
+      `Change Burnable to true`
+    );
+
+    await dac.signVoting(0);
+
+    await dac.activateVoting(0);
+
+    expect(await dac.burnable()).to.equal(true);
+
+    expect(await dac.teammates(0)).to.equal(myAddress);
+
+    await dac.burnGovernanceTokens([dac.address]);
+
+    expect(await dac.getAllTeammates()).to.be.an("array").that.is.empty;
+
+    expect(await dac.balanceOf(myAddress)).to.equal(0);
+
+    expect(await dac.totalSupply()).to.equal(100e3 - 10);
+  });
+
+  it("Burn Governance Tokens With Two Teammates", async () => {
+    const signers = await ethers.getSigners();
+
+    const myAddress = await signers[0].getAddress();
+
+    const friend = await signers[1].getAddress();
+
+    await dac.createVoting(
+      dac.address,
+      ethers.utils.id("addTeammate(address)").slice(0, 10) +
+        abiCoder.encode(["address"], [friend]).slice(2),
+      0,
+      `Add ${friend}`
+    );
+
+    await dac.signVoting(0);
+
+    await dac.activateVoting(0);
+
+    expect((await dac.getAllTeammates()).length).to.equal(2);
+    expect(await dac.teammates(0)).to.equal(myAddress);
+    expect(await dac.teammates(1)).to.equal(friend);
+
+    expect(await dac.balanceOf(dac.address))
+      .to.equal(await dac.totalSupply())
+      .to.equal(100e3);
+
+    expect(await dac.balanceOf(myAddress)).to.equal(0);
+
+    // It doesn't matter how many tokens you enter as an argument, as long as you buy them with coins.
+    // You will receive the maximum possible number of tokens based on your msg.value
+    await dac.buyGovernanceTokens(10, {
+      value: BigNumber.from(+"1e17" + ""),
+    });
+
+    await dac.connect(signers[1]).buyGovernanceTokens(10, {
+      value: BigNumber.from(+"1e17" + ""),
+    });
+
+    expect(await dac.balanceOf(dac.address)).to.equal(100e3 - 20);
+
+    expect(await dac.balanceOf(myAddress)).to.equal(10);
+
+    expect(await dac.balanceOf(friend)).to.equal(10);
+
+    expect(await dac.totalSupply()).to.equal(100e3);
+
+    expect(await dac.burnable()).to.equal(false);
+
+    await dac.createVoting(
+      dac.address,
+      ethers.utils.id("changeBurnable(bool)").slice(0, 10) +
+        abiCoder.encode(["bool"], [true]).slice(2),
+      0,
+      `Change Burnable to true`
+    );
+
+    await dac.signVoting(1);
+    await dac.connect(signers[1]).signVoting(1);
+
+    await dac.activateVoting(1);
+
+    expect(await dac.burnable()).to.equal(true);
+
+    expect(await dac.teammates(0)).to.equal(myAddress);
+
+    await dac.burnGovernanceTokens([dac.address]);
+
+    // expect(await dac.getAllTeammates()).to.be.an("array").that.is.empty;
+
+    expect(await dac.balanceOf(myAddress)).to.equal(0);
+
+    expect(await dac.totalSupply()).to.equal(100e3 - 10);
+  });
+
+  it("Remove Myself", async () => {
+    const signers = await ethers.getSigners();
+
+    const myAddress = await signers[0].getAddress();
+
+    await dac.createVoting(
+      dac.address,
+      ethers.utils.id("removeTeammate(address)").slice(0, 10) +
+        abiCoder.encode(["address"], [myAddress]).slice(2),
+      0,
+      `Remove ${myAddress}`
+    );
+
+    await dac.signVoting(0);
+
+    await dac.activateVoting(0);
   });
 });

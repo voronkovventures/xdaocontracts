@@ -32,7 +32,7 @@ contract Dac {
 
     bool public halfToVoteFrozen;
 
-    bool public teammatesListFrozen;
+    bool public teammatesListFrozen = false;
 
     uint256 public votingDuration;
 
@@ -78,6 +78,12 @@ contract Dac {
     event VotingSigned(uint256 index, address signer, uint256 timestamp);
 
     event VotingActivated(uint256 index, uint256 timestamp, bytes result);
+
+    event Received(address, uint256);
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
 
     modifier teammatesOnly {
         bool isTeammate;
@@ -298,24 +304,31 @@ contract Dac {
 
         require(_found);
 
-        address[] memory newTeammates = new address[](teammates.length - 1);
+        teammates[_index] = teammates[teammates.length - 1];
 
-        for (uint256 i = 0; i < teammates.length - 1; i++) {
-            if (i != _index && i < _index) {
-                newTeammates[i] = teammates[i];
-            } else {
-                newTeammates[i] = teammates[i + 1];
-            }
-        }
-
-        teammates = newTeammates;
+        teammates.pop();
 
         return true;
     }
 
     function transferOfRights(address _oldTeammate, address _newTeammate) public contractOnly returns (bool success) {
-        removeTeammate(_oldTeammate);
-        addTeammate(_newTeammate);
+        require(!teammatesListFrozen);
+
+        bool _found;
+        uint256 _index;
+
+        for (uint256 i = 0; i < teammates.length; i++) {
+            if (_oldTeammate == teammates[i]) {
+                _found = true;
+                _index = i;
+                break;
+            }
+        }
+
+        require(_found);
+
+        teammates[_index] = _newTeammate;
+
         return true;
     }
 
@@ -450,26 +463,32 @@ contract Dac {
         payable(msg.sender).transfer(address(this).balance / share);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
-            IERC20 _tokenToSend = IERC20(_tokens[i]);
+            if (_tokens[i] != address(this)) {
+                IERC20 _tokenToSend = IERC20(_tokens[i]);
 
-            _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+                _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+            }
         }
 
         totalSupply -= balanceOf[msg.sender];
 
         balanceOf[msg.sender] = 0;
 
-        bool isTeammate;
+        bool _found;
+        uint256 _index;
 
         for (uint256 i = 0; i < teammates.length; i++) {
             if (msg.sender == teammates[i]) {
-                isTeammate = true;
+                _found = true;
+                _index = i;
                 break;
             }
         }
 
-        if (isTeammate) {
-            removeTeammate(msg.sender);
+        if (_found) {
+            teammates[_index] = teammates[teammates.length - 1];
+
+            teammates.pop();
         }
 
         return true;
