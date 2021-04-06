@@ -14,4 +14,4 @@ https://modagavr.gitbook.io/xdao-contracts/
 
 ### Run Contract Tests
 
-`npx hardhat test` to run compiled contracts 
+`npx hardhat test`

@@ -256,7 +256,7 @@ contract Daf {
             sumOfSigners += balanceOf[votings[_index].signers[i]];
         }
 
-        require(sumOfSigners > ((totalSupply - balanceOf[address(this)]) * percentToVote) / 100);
+        require(sumOfSigners >= ((totalSupply - balanceOf[address(this)]) * percentToVote) / 100);
 
         require(!votings[_index].isActivated);
 
@@ -317,7 +317,7 @@ contract Daf {
             sumOfSigners += balanceOf[votingsAddToWhitelist[_index].signers[i]];
         }
 
-        require(sumOfSigners > ((totalSupply - balanceOf[address(this)]) * percentToVote) / 100);
+        require(sumOfSigners >= ((totalSupply - balanceOf[address(this)]) * percentToVote) / 100);
 
         require(!votingsAddToWhitelist[_index].isActivated);
 
