@@ -317,6 +317,8 @@ contract Daf {
     }
 
     function activateVotingAddToWhitelist(uint256 _index) public returns (bool success) {
+        require(balanceOf[address(this)] < totalSupply);
+
         uint256 sumOfSigners = 0;
 
         for (uint256 i = 0; i < votingsAddToWhitelist[_index].signers.length; i++) {
