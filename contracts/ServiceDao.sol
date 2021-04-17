@@ -172,6 +172,10 @@ contract ServiceDao {
     }
 
     function transferOfRights(address _oldTeammate, address _newTeammate) public contractOnly returns (bool success) {
+        for (uint256 i = 0; i < teammates.length; i++) {
+            require(_newTeammate != teammates[i]);
+        }
+
         bool _found;
         uint256 _index;
 
