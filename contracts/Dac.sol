@@ -446,9 +446,28 @@ contract Dac {
             require(_tokens[i] != address(this));
         }
 
-        uint256 share = _fixShare(balanceOf[msg.sender]);
+        uint256 share = (totalSupply - balanceOf[address(this)]) / balanceOf[msg.sender];
 
-        _burnUsersTokens(msg.sender);
+        totalSupply -= balanceOf[msg.sender];
+
+        balanceOf[msg.sender] = 0;
+
+        bool _found;
+        uint256 _index;
+
+        for (uint256 i = 0; i < teammates.length; i++) {
+            if (msg.sender == teammates[i]) {
+                _found = true;
+                _index = i;
+                break;
+            }
+        }
+
+        if (_found) {
+            teammates[_index] = teammates[teammates.length - 1];
+
+            teammates.pop();
+        }
 
         uint256[] memory _tokenShares = new uint256[](_tokens.length);
 
@@ -471,46 +490,20 @@ contract Dac {
         return true;
     }
 
-    function _fixShare(uint256 _balanceOfSender) internal view returns (uint256 share) {
-        share = (totalSupply - balanceOf[address(this)]) / _balanceOfSender;
-    }
-
-    function _burnUsersTokens(address _whoBurns) internal returns (bool success) {
-        totalSupply -= balanceOf[_whoBurns];
-
-        balanceOf[_whoBurns] = 0;
-
-        bool _found;
-        uint256 _index;
-
-        for (uint256 i = 0; i < teammates.length; i++) {
-            if (_whoBurns == teammates[i]) {
-                _found = true;
-                _index = i;
-                break;
-            }
-        }
-
-        if (_found) {
-            teammates[_index] = teammates[teammates.length - 1];
-
-            teammates.pop();
-        }
-
-        return true;
-    }
-
     function hasDuplicate(address[] memory A) public pure returns (bool) {
-        require(A.length > 0, "A is empty");
-
-        for (uint256 i = 0; i < A.length - 1; i++) {
-            address current = A[i];
-            for (uint256 j = i + 1; j < A.length; j++) {
-                if (current == A[j]) {
-                    return true;
+        if (A.length == 0) {
+            return false;
+        } else {
+            for (uint256 i = 0; i < A.length - 1; i++) {
+                address current = A[i];
+                for (uint256 j = i + 1; j < A.length; j++) {
+                    if (current == A[j]) {
+                        return true;
+                    }
                 }
             }
         }
+
         return false;
     }
 

@@ -441,9 +441,11 @@ contract Daf {
             require(_tokens[i] != address(this));
         }
 
-        uint256 share = _fixShare(balanceOf[msg.sender]);
+        uint256 share = (totalSupply - balanceOf[address(this)]) / balanceOf[msg.sender];
 
-        _burnUsersTokens(msg.sender);
+        totalSupply -= balanceOf[msg.sender];
+
+        balanceOf[msg.sender] = 0;
 
         uint256[] memory _tokenShares = new uint256[](_tokens.length);
 

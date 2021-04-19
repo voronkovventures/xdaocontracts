@@ -365,7 +365,7 @@ describe("Dac", () => {
 
     expect(await dac.teammates(0)).to.equal(myAddress);
 
-    await dac.burnGovernanceTokens([dac.address]);
+    await dac.burnGovernanceTokens([]);
 
     expect(await dac.getAllTeammates()).to.be.an("array").that.is.empty;
 
@@ -440,7 +440,7 @@ describe("Dac", () => {
 
     expect(await dac.teammates(0)).to.equal(myAddress);
 
-    await dac.burnGovernanceTokens([dac.address]);
+    await dac.burnGovernanceTokens([]);
 
     // expect(await dac.getAllTeammates()).to.be.an("array").that.is.empty;
 
