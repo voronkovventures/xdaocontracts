@@ -15,9 +15,9 @@ interface IPancakePair {
 }
 
 contract Minter {
-    uint256 threeYearsLockExprired;
+    uint256 public immutable threeYearsLockExprired;
 
-    address public immutable xdaoAddress; // xDAO Token Address 0x53fe1e6171c4f7f927210bbf2d23c218e1eea08b
+    address public immutable xdaoAddress; // xDAO Token Address
 
     bool public blocked;
 
@@ -145,9 +145,7 @@ contract Minter {
         IERC20 _xDAO = IERC20(xdaoAddress);
 
         uint256 _share =
-            ((_xDAO.totalSupply() - _xDAO.balanceOf(address(this)) + _xDAO.balanceOf(msg.sender)) * 20) /
-                _xDAO.balanceOf(msg.sender) /
-                19; // share^-1
+            ((_xDAO.totalSupply() - _xDAO.balanceOf(address(this))) * 20) / _xDAO.balanceOf(msg.sender) / 19; // 1/share
 
         _xDAO.transferFrom(msg.sender, address(this), _amount);
 

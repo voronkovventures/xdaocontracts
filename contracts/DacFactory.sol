@@ -24,12 +24,22 @@ contract DacFactory {
         bool _purchasePublic,
         bool _halfToVote,
         uint256 _votingDuration
-    ) public {
+    ) external {
+        bool _validCurrency;
+
+        for (uint256 i = 0; i < currencies.length; i++) {
+            if (_currency == currencies[i]) {
+                _validCurrency = true;
+                break;
+            }
+        }
+
+        require(_validCurrency);
+
         Dac dac =
             new Dac(
                 _name,
                 _symbol,
-                currencies,
                 _currency,
                 _teammates,
                 _totalSupply,
@@ -44,7 +54,7 @@ contract DacFactory {
         emit DacCreated(dac);
     }
 
-    function getDacs() public view returns (Dac[] memory) {
+    function getDacs() external view returns (Dac[] memory) {
         return dacs;
     }
 }

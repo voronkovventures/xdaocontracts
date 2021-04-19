@@ -10,7 +10,7 @@ contract Dac {
 
     string public symbol;
 
-    address public currency;
+    address public immutable currency;
 
     uint256 public constant maxTeammates = 1000;
 
@@ -22,7 +22,7 @@ contract Dac {
 
     uint256 public constant decimals = 0;
 
-    uint256 public governanceTokensPrice;
+    uint256 public immutable governanceTokensPrice;
 
     bool public purchasePublic;
 
@@ -71,13 +71,13 @@ contract Dac {
         bytes data,
         uint256 value,
         string comment,
-        uint256 index,
+        uint256 indexed index,
         uint256 timestamp
     );
 
-    event VotingSigned(uint256 index, address signer, uint256 timestamp);
+    event VotingSigned(uint256 indexed index, address indexed signer, uint256 timestamp);
 
-    event VotingActivated(uint256 index, uint256 timestamp, bytes result);
+    event VotingActivated(uint256 indexed index, uint256 timestamp, bytes result);
 
     event Received(address, uint256);
 
@@ -107,7 +107,6 @@ contract Dac {
     constructor(
         string memory _name,
         string memory _symbol,
-        address[] memory _currencies,
         address _currency,
         address[] memory _teammates,
         uint256 _totalSupply,
@@ -123,27 +122,6 @@ contract Dac {
         symbol = _symbol;
 
         // Currency to Buy governanceTokens
-
-        // 0x2170Ed0880ac9A755fd29B2688956BD959F933F8  ETH
-        // 0x55d398326f99059fF775485246999027B3197955  BUSD-T
-        // 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c  WBNB
-        // 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d  USDC
-        // 0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3  DAI
-        // 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56  BUSD
-        // 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c  BTCB
-        // 0x53fe1e6171c4f7f927210bbf2d23c218e1eea08b  XDAO
-
-        bool _validCurrency;
-
-        for (uint256 i = 0; i < _currencies.length; i++) {
-            if (_currency == _currencies[i]) {
-                _validCurrency = true;
-                break;
-            }
-        }
-
-        require(_validCurrency);
-
         currency = _currency;
 
         // Teammates Setting
@@ -211,7 +189,7 @@ contract Dac {
         bytes calldata _data,
         uint256 _value,
         string memory _comment
-    ) public teammatesOnly returns (bool success) {
+    ) external teammatesOnly returns (bool success) {
         address[] memory _signers;
 
         votings.push(
@@ -232,7 +210,7 @@ contract Dac {
         return true;
     }
 
-    function signVoting(uint256 _index) public teammatesOnly returns (bool success) {
+    function signVoting(uint256 _index) external teammatesOnly returns (bool success) {
         // Didn't vote yet
         for (uint256 i = 0; i < votings[_index].signers.length; i++) {
             require(msg.sender != votings[_index].signers[i]);
@@ -248,15 +226,11 @@ contract Dac {
         return true;
     }
 
-    function activateVoting(uint256 _index) public {
+    function activateVoting(uint256 _index) external {
         if (!halfToVote) {
             require(votings[_index].signers.length >= teammates.length);
         } else {
-            if (teammates.length % 2 == 0) {
-                require(votings[_index].signers.length > (teammates.length / 2));
-            } else {
-                require(votings[_index].signers.length >= ((teammates.length + 1) / 2));
-            }
+            require(votings[_index].signers.length > (teammates.length / 2));
         }
 
         require(!votings[_index].isActivated);
@@ -313,6 +287,10 @@ contract Dac {
 
     function transferOfRights(address _oldTeammate, address _newTeammate) public contractOnly returns (bool success) {
         require(!teammatesListFrozen);
+
+        for (uint256 i = 0; i < teammates.length; i++) {
+            require(_newTeammate != teammates[i]);
+        }
 
         bool _found;
         uint256 _index;
@@ -422,7 +400,7 @@ contract Dac {
         return true;
     }
 
-    function buyGovernanceTokens(uint256 _amount) public payable returns (bool success) {
+    function buyGovernanceTokens(uint256 _amount) external payable returns (bool success) {
         if (!purchasePublic) {
             bool _isTeammate;
 
@@ -442,6 +420,8 @@ contract Dac {
             balanceOf[msg.sender] += _amountIfBoughtWithCoins;
 
             balanceOf[address(this)] -= _amountIfBoughtWithCoins;
+
+            emit Transfer(address(this), msg.sender, _amountIfBoughtWithCoins);
         } else {
             IERC20 _currency = IERC20(currency);
 
@@ -450,15 +430,19 @@ contract Dac {
             balanceOf[msg.sender] += _amount;
 
             balanceOf[address(this)] -= _amount;
+
+            emit Transfer(address(this), msg.sender, _amount);
         }
 
         return true;
     }
 
-    function burnGovernanceTokens(address[] memory _tokens) public returns (bool success) {
+    function burnGovernanceTokens(address[] memory _tokens) external returns (bool success) {
         require(burnable);
 
-        uint256 share = (totalSupply - balanceOf[address(this)]) / balanceOf[msg.sender];
+        uint256 share = _fixShare(balanceOf[msg.sender]);
+
+        _burnUsersTokens(msg.sender);
 
         payable(msg.sender).transfer(address(this).balance / share);
 
@@ -466,19 +450,29 @@ contract Dac {
             if (_tokens[i] != address(this)) {
                 IERC20 _tokenToSend = IERC20(_tokens[i]);
 
-                _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+                bool b = _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+
+                require(b);
             }
         }
 
-        totalSupply -= balanceOf[msg.sender];
+        return true;
+    }
 
-        balanceOf[msg.sender] = 0;
+    function _fixShare(uint256 _balanceOfSender) internal view returns (uint256 share) {
+        share = (totalSupply - balanceOf[address(this)]) / _balanceOfSender;
+    }
+
+    function _burnUsersTokens(address _whoBurns) internal returns (bool success) {
+        totalSupply -= balanceOf[_whoBurns];
+
+        balanceOf[_whoBurns] = 0;
 
         bool _found;
         uint256 _index;
 
         for (uint256 i = 0; i < teammates.length; i++) {
-            if (msg.sender == teammates[i]) {
+            if (_whoBurns == teammates[i]) {
                 _found = true;
                 _index = i;
                 break;
@@ -494,11 +488,11 @@ contract Dac {
         return true;
     }
 
-    function getAllTeammates() public view returns (address[] memory) {
+    function getAllTeammates() external view returns (address[] memory) {
         return teammates;
     }
 
-    function getAllVotings() public view returns (Voting[] memory) {
+    function getAllVotings() external view returns (Voting[] memory) {
         return votings;
     }
 }

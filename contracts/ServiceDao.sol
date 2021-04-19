@@ -28,13 +28,13 @@ contract ServiceDao {
         bytes data,
         uint256 value,
         string comment,
-        uint256 index,
+        uint256 indexed index,
         uint256 timestamp
     );
 
-    event VotingSigned(uint256 index, address signer, uint256 timestamp);
+    event VotingSigned(uint256 indexed index, address indexed signer, uint256 timestamp);
 
-    event VotingActivated(uint256 index, uint256 timestamp, bytes result);
+    event VotingActivated(uint256 indexed index, uint256 timestamp, bytes result);
 
     modifier teammatesOnly {
         bool isTeammate;
@@ -68,7 +68,7 @@ contract ServiceDao {
         bytes calldata _data,
         uint256 _value,
         string memory _comment
-    ) public teammatesOnly returns (bool success) {
+    ) external teammatesOnly returns (bool success) {
         address[] memory _signers;
 
         votings.push(
@@ -89,7 +89,7 @@ contract ServiceDao {
         return true;
     }
 
-    function signVoting(uint256 _index) public teammatesOnly returns (bool success) {
+    function signVoting(uint256 _index) external teammatesOnly returns (bool success) {
         // Didn't vote yet
         for (uint256 i = 0; i < votings[_index].signers.length; i++) {
             require(msg.sender != votings[_index].signers[i]);
@@ -105,7 +105,7 @@ contract ServiceDao {
         return true;
     }
 
-    function activateVoting(uint256 _index) public {
+    function activateVoting(uint256 _index) external {
         if (teammates.length % 2 == 0) {
             require(votings[_index].signers.length > (teammates.length / 2));
         } else {

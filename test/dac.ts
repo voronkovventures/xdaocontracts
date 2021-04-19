@@ -36,7 +36,6 @@ describe("Dac", () => {
     dac = (await deployContract(signers[0], DacArtifact, [
       dacInfo.name,
       dacInfo.symbol,
-      [WBNB],
       dacInfo.currency,
       dacInfo.teammates,
       dacInfo.totalSupply,

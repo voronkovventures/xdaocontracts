@@ -2,13 +2,13 @@
 pragma solidity ^0.8.3;
 
 contract xDAO {
-    string public name = "xDAO Token";
+    string public constant name = "xDAO Token";
 
-    string public symbol = "XDAO";
+    string public constant symbol = "XDAO";
 
-    uint256 public totalSupply = 2e26; // 200 millions + 18 decimals
+    uint256 public constant totalSupply = 2e26; // 200 millions + 18 decimals
 
-    uint256 public decimals = 18;
+    uint8 public constant decimals = 18;
 
     mapping(address => uint256) public balanceOf;
 

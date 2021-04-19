@@ -10,7 +10,7 @@ contract Daf {
 
     string public symbol;
 
-    address public currency;
+    address public immutable currency;
 
     mapping(address => bool) public whitelist;
 
@@ -22,7 +22,7 @@ contract Daf {
 
     uint256 public constant decimals = 0;
 
-    uint256 public governanceTokensPrice;
+    uint256 public immutable governanceTokensPrice;
 
     uint256 public percentToVote;
 
@@ -69,13 +69,13 @@ contract Daf {
         bytes data,
         uint256 value,
         string comment,
-        uint256 index,
+        uint256 indexed index,
         uint256 timestamp
     );
 
-    event VotingSigned(uint256 index, address signer, uint256 timestamp);
+    event VotingSigned(uint256 indexed index, address indexed signer, uint256 timestamp);
 
-    event VotingActivated(uint256 index, uint256 timestamp, bytes result);
+    event VotingActivated(uint256 indexed index, uint256 timestamp, bytes result);
 
     struct VotingAddToWhitelist {
         address whoToAdd;
@@ -113,7 +113,6 @@ contract Daf {
     constructor(
         string memory _name,
         string memory _symbol,
-        address[] memory _currencies,
         address _currency,
         address _creator,
         uint256 _totalSupply,
@@ -129,26 +128,6 @@ contract Daf {
         symbol = _symbol;
 
         // Currency to Buy governanceTokens
-
-        // 0x2170Ed0880ac9A755fd29B2688956BD959F933F8  ETH
-        // 0x55d398326f99059fF775485246999027B3197955  BUSD-T
-        // 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c  WBNB
-        // 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d  USDC
-        // 0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3  DAI
-        // 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56  BUSD
-        // 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c  BTCB
-        // 0x53fe1e6171c4f7f927210bbf2d23c218e1eea08b  XDAO
-        bool _validCurrency;
-
-        for (uint256 i = 0; i < _currencies.length; i++) {
-            if (_currency == _currencies[i]) {
-                _validCurrency = true;
-                break;
-            }
-        }
-
-        require(_validCurrency);
-
         currency = _currency;
 
         // _creator = msg.sender from Factory
@@ -218,7 +197,7 @@ contract Daf {
         bytes calldata _data,
         uint256 _value,
         string memory _comment
-    ) public holdersOnly returns (bool success) {
+    ) external holdersOnly returns (bool success) {
         address[] memory _signers;
 
         votings.push(
@@ -239,7 +218,7 @@ contract Daf {
         return true;
     }
 
-    function signVoting(uint256 _index) public holdersOnly returns (bool success) {
+    function signVoting(uint256 _index) external holdersOnly returns (bool success) {
         // Didn't vote yet
         for (uint256 i = 0; i < votings[_index].signers.length; i++) {
             require(msg.sender != votings[_index].signers[i]);
@@ -255,7 +234,7 @@ contract Daf {
         return true;
     }
 
-    function activateVoting(uint256 _index) public {
+    function activateVoting(uint256 _index) external {
         uint256 sumOfSigners = 0;
 
         for (uint256 i = 0; i < votings[_index].signers.length; i++) {
@@ -423,7 +402,7 @@ contract Daf {
         return true;
     }
 
-    function buyGovernanceTokens(uint256 _amount) public payable returns (bool success) {
+    function buyGovernanceTokens(uint256 _amount) external payable returns (bool success) {
         if (currency == 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) {
             uint256 _amountIfBoughtWithCoins = msg.value / governanceTokensPrice;
 
@@ -432,6 +411,8 @@ contract Daf {
             balanceOf[msg.sender] += _amountIfBoughtWithCoins;
 
             balanceOf[address(this)] -= _amountIfBoughtWithCoins;
+
+            emit Transfer(address(this), msg.sender, _amountIfBoughtWithCoins);
         } else {
             require(whitelist[msg.sender] && _amount <= limitToBuy);
 
@@ -442,6 +423,8 @@ contract Daf {
             balanceOf[msg.sender] += _amount;
 
             balanceOf[address(this)] -= _amount;
+
+            emit Transfer(address(this), msg.sender, _amount);
         }
 
         whitelist[msg.sender] = false;
@@ -449,7 +432,7 @@ contract Daf {
         return true;
     }
 
-    function burnGovernanceTokens(address[] memory _tokens) public returns (bool success) {
+    function burnGovernanceTokens(address[] memory _tokens) external returns (bool success) {
         require(burnable);
 
         uint256 share = (totalSupply - balanceOf[address(this)]) / balanceOf[msg.sender];
@@ -460,7 +443,9 @@ contract Daf {
             if (_tokens[i] != address(this)) {
                 IERC20 _tokenToSend = IERC20(_tokens[i]);
 
-                _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+                bool b = _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+
+                require(b);
             }
         }
 
@@ -471,11 +456,11 @@ contract Daf {
         return true;
     }
 
-    function getAllVotings() public view returns (Voting[] memory) {
+    function getAllVotings() external view returns (Voting[] memory) {
         return votings;
     }
 
-    function getAllVotingsAddToWhitelist() public view returns (VotingAddToWhitelist[] memory) {
+    function getAllVotingsAddToWhitelist() external view returns (VotingAddToWhitelist[] memory) {
         return votingsAddToWhitelist;
     }
 }

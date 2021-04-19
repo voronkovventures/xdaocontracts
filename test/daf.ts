@@ -36,7 +36,6 @@ describe("Daf", () => {
     daf = (await deployContract(signers[0], DafArtifact, [
       dafInfo.name,
       dafInfo.symbol,
-      [WBNB],
       dafInfo.currency,
       dafInfo.creator,
       dafInfo.totalSupply,

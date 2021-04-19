@@ -23,12 +23,22 @@ contract DafFactory {
         uint256 _percentToVote,
         uint256 _limitToBuy,
         uint256 _votingDuration
-    ) public {
+    ) external {
+        bool _validCurrency;
+
+        for (uint256 i = 0; i < currencies.length; i++) {
+            if (_currency == currencies[i]) {
+                _validCurrency = true;
+                break;
+            }
+        }
+
+        require(_validCurrency);
+
         Daf daf =
             new Daf(
                 _name,
                 _symbol,
-                currencies,
                 _currency,
                 msg.sender,
                 _totalSupply,
@@ -43,7 +53,7 @@ contract DafFactory {
         emit DafCreated(daf);
     }
 
-    function getDafs() public view returns (Daf[] memory) {
+    function getDafs() external view returns (Daf[] memory) {
         return dafs;
     }
 }
