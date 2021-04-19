@@ -435,25 +435,61 @@ contract Daf {
     function burnGovernanceTokens(address[] memory _tokens) external returns (bool success) {
         require(burnable);
 
-        uint256 share = (totalSupply - balanceOf[address(this)]) / balanceOf[msg.sender];
+        require(!hasDuplicate(_tokens));
+
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            require(_tokens[i] != address(this));
+        }
+
+        uint256 share = _fixShare(balanceOf[msg.sender]);
+
+        _burnUsersTokens(msg.sender);
+
+        uint256[] memory _tokenShares = new uint256[](_tokens.length);
+
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            IERC20 _tokenToSend = IERC20(_tokens[i]);
+
+            _tokenShares[i] = _tokenToSend.balanceOf(address(this)) / share;
+        }
 
         payable(msg.sender).transfer(address(this).balance / share);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
-            if (_tokens[i] != address(this)) {
-                IERC20 _tokenToSend = IERC20(_tokens[i]);
+            IERC20 _tokenToSend = IERC20(_tokens[i]);
 
-                bool b = _tokenToSend.transfer(msg.sender, _tokenToSend.balanceOf(address(this)) / share);
+            bool b = _tokenToSend.transfer(msg.sender, _tokenShares[i]);
 
-                require(b);
-            }
+            require(b);
         }
 
-        totalSupply -= balanceOf[msg.sender];
+        return true;
+    }
 
-        balanceOf[msg.sender] = 0;
+    function _fixShare(uint256 _balanceOfSender) internal view returns (uint256 share) {
+        share = (totalSupply - balanceOf[address(this)]) / _balanceOfSender;
+    }
+
+    function _burnUsersTokens(address _whoBurns) internal returns (bool success) {
+        totalSupply -= balanceOf[_whoBurns];
+
+        balanceOf[_whoBurns] = 0;
 
         return true;
+    }
+
+    function hasDuplicate(address[] memory A) public pure returns (bool) {
+        require(A.length > 0, "A is empty");
+
+        for (uint256 i = 0; i < A.length - 1; i++) {
+            address current = A[i];
+            for (uint256 j = i + 1; j < A.length; j++) {
+                if (current == A[j]) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     function getAllVotings() external view returns (Voting[] memory) {
