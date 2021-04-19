@@ -10,6 +10,8 @@ contract xDAO {
 
     uint8 public constant decimals = 18;
 
+    address public immutable owner;
+
     mapping(address => uint256) public balanceOf;
 
     mapping(address => mapping(address => uint256)) public allowance;
@@ -19,6 +21,8 @@ contract xDAO {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     constructor() {
+        owner = msg.sender;
+
         balanceOf[msg.sender] = totalSupply;
 
         emit Transfer(address(0), msg.sender, totalSupply);
@@ -49,5 +53,9 @@ contract xDAO {
 
         emit Transfer(sender, recipient, amount);
         return true;
+    }
+
+    function getOwner() external view returns (address) {
+        return owner;
     }
 }
