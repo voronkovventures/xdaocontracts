@@ -27,6 +27,7 @@ export default {
     bsc_mainnet: {
       url: "https://bsc-dataseed.binance.org/",
       chainId: 56,
+      gasPrice: 20000000000,
       accounts: [process.env.PRIVATE_KEY],
     },
   },
