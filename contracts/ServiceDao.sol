@@ -106,11 +106,7 @@ contract ServiceDao {
     }
 
     function activateVoting(uint256 _index) external {
-        if (teammates.length % 2 == 0) {
-            require(votings[_index].signers.length > (teammates.length / 2));
-        } else {
-            require(votings[_index].signers.length >= ((teammates.length + 1) / 2));
-        }
+        require(votings[_index].signers.length > (teammates.length / 2));
 
         bool isGoldenShareVoted;
 

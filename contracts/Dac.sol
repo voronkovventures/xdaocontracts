@@ -20,7 +20,7 @@ contract Dac {
 
     uint256 public totalSupply;
 
-    uint256 public constant decimals = 0;
+    uint8 public constant decimals = 0;
 
     uint256 public immutable governanceTokensPrice;
 
