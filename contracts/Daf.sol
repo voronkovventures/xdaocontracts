@@ -441,7 +441,7 @@ contract Daf {
             require(_tokens[i] != address(this));
         }
 
-        uint256 share = (totalSupply - balanceOf[address(this)]) / balanceOf[msg.sender];
+        uint256 share = (1e18 * (totalSupply - balanceOf[address(this)])) / balanceOf[msg.sender];
 
         totalSupply -= balanceOf[msg.sender];
 
@@ -452,7 +452,7 @@ contract Daf {
         for (uint256 i = 0; i < _tokens.length; i++) {
             IERC20 _tokenToSend = IERC20(_tokens[i]);
 
-            _tokenShares[i] = _tokenToSend.balanceOf(address(this)) / share;
+            _tokenShares[i] = (1e18 * _tokenToSend.balanceOf(address(this))) / share;
         }
 
         payable(msg.sender).transfer(address(this).balance / share);
