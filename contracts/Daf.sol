@@ -455,7 +455,7 @@ contract Daf {
             _tokenShares[i] = (1e18 * _tokenToSend.balanceOf(address(this))) / share;
         }
 
-        payable(msg.sender).transfer(address(this).balance / share);
+        payable(msg.sender).transfer((1e18 * address(this).balance) / share);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
             IERC20 _tokenToSend = IERC20(_tokens[i]);
